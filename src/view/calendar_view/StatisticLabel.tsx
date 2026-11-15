@@ -1,4 +1,4 @@
-import {useContext} from "react";
+import {useContext, useEffect} from "react";
 import {DateTime} from "luxon";
 import {range} from "../../util/util";
 import {NoteType, TodoAnnotationMode} from "../../base/enum";
@@ -8,6 +8,11 @@ import {PluginContext} from "../context";
 export default function StatisticLabel({date, noteType}: { date: DateTime, noteType: NoteType }) {
 
     const plugin = useContext(PluginContext)!;
+    const dateKey = date.toISODate();
+
+    useEffect(() => {
+        plugin.noteStatisticController.addTaskByDateAndNoteType(date, noteType);
+    }, [dateKey, noteType, plugin]);
 
     const {totalDots, hasUnfinishedTasks} = plugin.noteStatisticController.getNoteStatic(date, noteType);
     const todoAnnotationMode = plugin.noteStatisticController.getTodoAnnotationMode();
@@ -18,8 +23,6 @@ export default function StatisticLabel({date, noteType}: { date: DateTime, noteT
     }
     // 是否在日历界面上显示圆孔以标注待办
     const displayHole: boolean = todoAnnotationMode == TodoAnnotationMode.HOLE && hasUnfinishedTasks !== null && hasUnfinishedTasks;
-    // 更新笔记统计信息
-    plugin.noteStatisticController.addTaskByDateAndNoteType(date, noteType);
 
     return <div className="statistic-label">
         {

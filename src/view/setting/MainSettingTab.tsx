@@ -1,4 +1,5 @@
 import {PluginSettingTab, Setting} from "obsidian";
+import {ReactNode} from "react";
 import {createRoot, Root} from "react-dom/client";
 import {FontSizeChangeMode, NoteType, TemplatePlugin} from "../../base/enum";
 import DustCalendarPlugin from "../../main";
@@ -12,51 +13,83 @@ import DotUpperLimitSelect from "./DotUpperLimitSelect";
 import TodoAnnotationModeSelect from "./TodoAnnotationModeSelect";
 import WordsPerDotInput from "./WordsPerDotInput";
 
+interface SettingDefinition {
+    type?: "group";
+    name?: string;
+    desc?: string;
+    heading?: string;
+    items?: SettingDefinition[];
+    visible?: () => boolean;
+    render?: (setting: Setting) => void | (() => void);
+}
 
 export default class MainSettingTab extends PluginSettingTab {
 
     private plugin: DustCalendarPlugin;
-    private fontSizeChangeModeSelectRoot: Root | null;
-    private immutableFontSizeSliderRoot: Root | null;
-    private quarterNameModeSelectRoot: Root | null;
-    private wordsPerDotInputRoot: Root | null;
-    private dotUpperLimitSelectRoot: Root | null;
-    private todoAnnotationModeSelectRoot: Root | null;
-    private templatePluginSelectRoot: Root | null;
-    private dailyNotePatternRoot: Root | null;
-    private dailyNoteTemplateRoot: Root | null;
-    private weeklyNotePatternRoot: Root | null;
-    private weeklyNoteTemplateRoot: Root | null;
-    private monthlyNotePatternRoot: Root | null;
-    private monthlyNoteTemplateRoot: Root | null;
-    private quarterlyNotePatternRoot: Root | null;
-    private quarterlyNoteTemplateRoot: Root | null;
-    private yearlyNotePatternRoot: Root | null;
-    private yearlyNoteTemplateRoot: Root | null;
+    private reactRoots: Set<Root>;
 
     constructor(plugin: DustCalendarPlugin) {
         super(plugin.app, plugin);
         this.plugin = plugin;
-        this.fontSizeChangeModeSelectRoot = null;
-        this.immutableFontSizeSliderRoot = null;
-        this.quarterNameModeSelectRoot = null;
-        this.wordsPerDotInputRoot = null;
-        this.dotUpperLimitSelectRoot = null;
-        this.todoAnnotationModeSelectRoot = null;
-        this.templatePluginSelectRoot = null;
-        this.dailyNotePatternRoot = null;
-        this.dailyNoteTemplateRoot = null;
-        this.weeklyNotePatternRoot = null;
-        this.weeklyNoteTemplateRoot = null;
-        this.monthlyNotePatternRoot = null;
-        this.monthlyNoteTemplateRoot = null;
-        this.quarterlyNotePatternRoot = null;
-        this.quarterlyNoteTemplateRoot = null;
-        this.yearlyNotePatternRoot = null;
-        this.yearlyNoteTemplateRoot = null;
+        this.reactRoots = new Set();
     }
 
-    display(): any {
+    getSettingDefinitions(): SettingDefinition[] {
+        return [
+            {
+                name: "是否显示农历信息",
+                desc: "关闭后不再显示农历月份、日期、节气、节日。",
+                render: setting => this.displayShouldDisplayLunarInfoToggle(setting),
+            },
+            {
+                name: "是否显示调休信息",
+                desc: "关闭后不再显示调休信息。",
+                render: setting => this.displayShouldDisplayHolidayInfo(setting),
+            },
+            {
+                name: "字体大小调整模式",
+                render: setting => this.renderReact(setting, <FontSizeChangeModeSelect plugin={this.plugin}/>),
+            },
+            {
+                name: "字体大小",
+                visible: () => this.plugin.database.setting.fontSizeChangeMode === FontSizeChangeMode.IMMUTABLE,
+                render: setting => this.renderReact(setting, <ImmutableFontSizeSlider plugin={this.plugin}/>),
+            },
+            {
+                name: "季度命名方式",
+                render: setting => this.renderReact(setting, <QuarterNameModeSelect plugin={this.plugin}/>),
+            },
+            {
+                name: "字数统计：字/点",
+                render: setting => this.renderReact(setting, <WordsPerDotInput plugin={this.plugin}/>),
+            },
+            {
+                name: "字数统计：点数上限",
+                render: setting => this.renderReact(setting, <DotUpperLimitSelect plugin={this.plugin}/>),
+            },
+            {
+                name: "待办标注方式",
+                render: setting => this.renderReact(setting, <TodoAnnotationModeSelect plugin={this.plugin}/>),
+            },
+            {
+                name: "创建新笔记之前是否需要确认",
+                desc: "关闭后不再弹窗提示创建新笔记的信息。",
+                render: setting => this.displayShouldConfirmBeforeCreatingNoteToggle(setting),
+            },
+            {
+                name: "模板插件",
+                render: setting => this.renderReact(setting, <TemplatePluginSelect plugin={this.plugin}/>),
+            },
+            this.getNoteSettingDefinitions(NoteType.DAILY, "每日笔记"),
+            this.getNoteSettingDefinitions(NoteType.WEEKLY, "每周笔记"),
+            this.getNoteSettingDefinitions(NoteType.MONTHLY, "每月笔记"),
+            this.getNoteSettingDefinitions(NoteType.QUARTERLY, "季度笔记"),
+            this.getNoteSettingDefinitions(NoteType.YEARLY, "年度笔记"),
+        ];
+    }
+
+    display(): void {
+        this.unmountReactRoots();
         const {containerEl} = this;
         containerEl.empty();
         this.displayShouldDisplayLunarInfoToggle();
@@ -70,165 +103,172 @@ export default class MainSettingTab extends PluginSettingTab {
         this.displayShouldConfirmBeforeCreatingNoteToggle();
         this.displayTemplatePluginSelect();
 
-        this.displayNoteSetting(NoteType.DAILY, "每日笔记", this.dailyNotePatternRoot, this.dailyNoteTemplateRoot);
-        this.displayNoteSetting(NoteType.WEEKLY, "每周笔记", this.weeklyNotePatternRoot, this.weeklyNoteTemplateRoot);
-        this.displayNoteSetting(NoteType.MONTHLY, "每月笔记", this.monthlyNotePatternRoot, this.monthlyNoteTemplateRoot);
-        this.displayNoteSetting(NoteType.QUARTERLY, "季度笔记", this.quarterlyNotePatternRoot, this.quarterlyNoteTemplateRoot);
-        this.displayNoteSetting(NoteType.YEARLY, "年度笔记", this.yearlyNotePatternRoot, this.yearlyNoteTemplateRoot);
+        this.displayNoteSetting(NoteType.DAILY, "每日笔记");
+        this.displayNoteSetting(NoteType.WEEKLY, "每周笔记");
+        this.displayNoteSetting(NoteType.MONTHLY, "每月笔记");
+        this.displayNoteSetting(NoteType.QUARTERLY, "季度笔记");
+        this.displayNoteSetting(NoteType.YEARLY, "年度笔记");
     }
 
-    async hide(): Promise<any> {
+    async hide(): Promise<void> {
         await this.plugin.database.saveSetting();
+        this.unmountReactRoots();
         this.plugin.calendarViewController.forceFlush();
-        // this.plugin.flushCalendarView();
-        return super.hide();
+        super.hide();
+    }
+
+    public refresh(): void {
+        const tab = this as unknown as { update?: () => void };
+        if (typeof tab.update === 'function') {
+            tab.update();
+        }
+        else {
+            this.display();
+        }
+    }
+
+    private getNoteSettingDefinitions(noteType: NoteType, title: string): SettingDefinition {
+        return {
+            type: "group",
+            heading: title,
+            items: [
+                {
+                    name: "启用",
+                    render: setting => {
+                        setting.setName("启用");
+                        this.addNoteOptionToggle(setting, noteType);
+                    },
+                },
+                {
+                    name: "文件命名规则",
+                    visible: () => this.plugin.noteController.getNoteOption(noteType),
+                    render: setting => this.renderReact(setting, <NotePattern plugin={this.plugin} noteType={noteType}/>),
+                },
+                {
+                    name: "模板文件",
+                    visible: () => this.plugin.noteController.getNoteOption(noteType)
+                        && this.plugin.templateController.getTemplatePlugin() !== TemplatePlugin.NONE
+                        && this.plugin.templateController.isTemplatePluginEnable(),
+                    render: setting => this.renderReact(setting, <NoteTemplate plugin={this.plugin} noteType={noteType}/>),
+                },
+            ],
+        };
+    }
+
+    private renderReact(setting: Setting, content: ReactNode): () => void {
+        setting.settingEl.empty();
+        const root = createRoot(setting.settingEl);
+        this.reactRoots.add(root);
+        root.render(content);
+        return () => {
+            root.unmount();
+            this.reactRoots.delete(root);
+        };
+    }
+
+    private unmountReactRoots(): void {
+        for (const root of this.reactRoots) {
+            root.unmount();
+        }
+        this.reactRoots.clear();
     }
 
     private displayFontSizeChangeModeSelect(): void {
-        const {containerEl} = this;
-        let settingComponent = new Setting(containerEl);
-        this.fontSizeChangeModeSelectRoot = createRoot(settingComponent.settingEl);
-        this.fontSizeChangeModeSelectRoot.render(
-            <FontSizeChangeModeSelect plugin={this.plugin}/>
-        );
+        this.renderReact(new Setting(this.containerEl), <FontSizeChangeModeSelect plugin={this.plugin}/>);
     }
 
-    private displayShouldDisplayLunarInfoToggle(): void {
-        const {containerEl} = this;
-        let element = new Setting(containerEl);
-        element.setName("是否显示农历信息").setDesc("关闭后不再显示农历月份、日期、节气、节日。");
-        element.addToggle(toggle => {
+    private displayShouldDisplayLunarInfoToggle(setting: Setting = new Setting(this.containerEl)): void {
+        setting.setName("是否显示农历信息").setDesc("关闭后不再显示农历月份、日期、节气、节日。");
+        setting.addToggle(toggle => {
             toggle.setValue(this.plugin.calendarViewController.getShouldDisplayLunarInfo());
-            toggle.onChange(async (value) => {
+            toggle.onChange((value) => {
                 this.plugin.calendarViewController.setShouldDisplayLunarInfo(value);
+                void this.plugin.database.saveSetting();
+                this.plugin.calendarViewController.requestFlush();
             });
         });
     }
 
-    private displayShouldDisplayHolidayInfo(): void {
-        const {containerEl} = this;
-        let noteOptionElement = new Setting(containerEl);
-        noteOptionElement.setName("是否显示调休信息").setDesc("关闭后不再显示调休信息。");
-        noteOptionElement.addToggle(toggle => {
+    private displayShouldDisplayHolidayInfo(setting: Setting = new Setting(this.containerEl)): void {
+        setting.setName("是否显示调休信息").setDesc("关闭后不再显示调休信息。");
+        setting.addToggle(toggle => {
             toggle.setValue(this.plugin.calendarViewController.getShouldDisplayHolidayInfo());
-            toggle.onChange(async (value) => {
+            toggle.onChange((value) => {
                 this.plugin.calendarViewController.setShouldDisplayHolidayInfo(value);
+                void this.plugin.database.saveSetting();
+                this.plugin.calendarViewController.requestFlush();
             });
         });
     }
 
     private displayImmutableFontSizeSlider(): void {
-
         if (this.plugin.database.setting.fontSizeChangeMode !== FontSizeChangeMode.IMMUTABLE) {
             return;
         }
-
-        const {containerEl} = this;
-        let settingComponent = new Setting(containerEl);
-        this.immutableFontSizeSliderRoot = createRoot(settingComponent.settingEl);
-        this.immutableFontSizeSliderRoot.render(
-            <ImmutableFontSizeSlider plugin={this.plugin}/>
-        );
+        this.renderReact(new Setting(this.containerEl), <ImmutableFontSizeSlider plugin={this.plugin}/>);
     }
 
     private displayQuarterNameModeSelect(): void {
-        const {containerEl} = this;
-        let settingComponent = new Setting(containerEl);
-        this.quarterNameModeSelectRoot = createRoot(settingComponent.settingEl);
-        this.quarterNameModeSelectRoot.render(
-            <QuarterNameModeSelect plugin={this.plugin}/>
-        );
+        this.renderReact(new Setting(this.containerEl), <QuarterNameModeSelect plugin={this.plugin}/>);
     }
 
     private displayWordsPerDotInput(): void {
-        const {containerEl} = this;
-        let settingComponent = new Setting(containerEl);
-        this.wordsPerDotInputRoot = createRoot(settingComponent.settingEl);
-        this.wordsPerDotInputRoot.render(
-            <WordsPerDotInput plugin={this.plugin}/>
-        );
+        this.renderReact(new Setting(this.containerEl), <WordsPerDotInput plugin={this.plugin}/>);
     }
 
     private displayDotUpperLimitSelect(): void {
-        const {containerEl} = this;
-        let settingComponent = new Setting(containerEl);
-        this.dotUpperLimitSelectRoot = createRoot(settingComponent.settingEl);
-        this.dotUpperLimitSelectRoot.render(
-            <DotUpperLimitSelect plugin={this.plugin}/>
-        );
+        this.renderReact(new Setting(this.containerEl), <DotUpperLimitSelect plugin={this.plugin}/>);
     }
 
     private displayTodoAnnotationModeSelect(): void {
-        const {containerEl} = this;
-        let settingComponent = new Setting(containerEl);
-        this.todoAnnotationModeSelectRoot = createRoot(settingComponent.settingEl);
-        this.todoAnnotationModeSelectRoot.render(
-            <TodoAnnotationModeSelect plugin={this.plugin}/>
-        );
+        this.renderReact(new Setting(this.containerEl), <TodoAnnotationModeSelect plugin={this.plugin}/>);
     }
 
-    private displayShouldConfirmBeforeCreatingNoteToggle(): void {
-        const {containerEl} = this;
-        let element = new Setting(containerEl);
-        element.setName("创建新笔记之前是否需要确认").setDesc("关闭后不再弹窗提示创建新笔记的信息。");
-        element.addToggle(toggle => {
+    private displayShouldConfirmBeforeCreatingNoteToggle(setting: Setting = new Setting(this.containerEl)): void {
+        setting.setName("创建新笔记之前是否需要确认").setDesc("关闭后不再弹窗提示创建新笔记的信息。");
+        setting.addToggle(toggle => {
             toggle.setValue(this.plugin.noteController.getShouldConfirmBeforeCreatingNote());
-            toggle.onChange(async (value) => {
+            toggle.onChange((value) => {
                 this.plugin.noteController.setShouldConfirmBeforeCreatingNote(value);
+                void this.plugin.database.saveSetting();
             });
         });
     }
 
     private displayTemplatePluginSelect(): void {
-        const {containerEl} = this;
-        let settingComponent = new Setting(containerEl);
-        this.templatePluginSelectRoot = createRoot(settingComponent.settingEl);
-        this.templatePluginSelectRoot.render(
-            <TemplatePluginSelect plugin={this.plugin}/>
-        );
+        this.renderReact(new Setting(this.containerEl), <TemplatePluginSelect plugin={this.plugin}/>);
     }
 
-    private displayNoteSetting(noteType: NoteType, title: string, notePatternRoot: Root | null, noteTemplateRoot: Root | null): void {
+    private displayNoteSetting(noteType: NoteType, title: string): void {
         const {containerEl} = this;
-
         const noteOption = this.plugin.noteController.getNoteOption(noteType);
 
-        let noteOptionElement = new Setting(containerEl);
+        const noteOptionElement = new Setting(containerEl);
         noteOptionElement.setName(title).setHeading();
-        noteOptionElement.addToggle(toggle => {
-            toggle.setValue(noteOption);
-            toggle.onChange(async (value) => {
-                this.plugin.noteController.setNoteOption(noteType, value);
-                this.display();
-            });
-        });
+        this.addNoteOptionToggle(noteOptionElement, noteType);
 
         if (!noteOption) {
             return;
         }
 
-        let notePatternElement = new Setting(containerEl);
-        notePatternElement.settingEl.empty();
-        notePatternRoot = createRoot(notePatternElement.settingEl);
-        notePatternRoot.render(
-            <NotePattern plugin={this.plugin} noteType={noteType}/>
-        );
+        this.renderReact(new Setting(containerEl), <NotePattern plugin={this.plugin} noteType={noteType}/>);
 
-        // 是否选择了模板插件
-        if (this.plugin.templateController.getTemplatePlugin() === TemplatePlugin.NONE) {
+        if (this.plugin.templateController.getTemplatePlugin() === TemplatePlugin.NONE
+            || !this.plugin.templateController.isTemplatePluginEnable()) {
             return;
         }
 
-        // 指定的模板插件是否启用
-        if (!this.plugin.templateController.isTemplatePluginEnable()) {
-            return;
-        }
+        this.renderReact(new Setting(containerEl), <NoteTemplate plugin={this.plugin} noteType={noteType}/>);
+    }
 
-        let noteTemplateElement = new Setting(containerEl);
-        noteTemplateElement.settingEl.empty();
-        noteTemplateRoot = createRoot(noteTemplateElement.settingEl);
-        noteTemplateRoot.render(
-            <NoteTemplate plugin={this.plugin} noteType={noteType}/>
-        );
+    private addNoteOptionToggle(setting: Setting, noteType: NoteType): void {
+        setting.addToggle(toggle => {
+            toggle.setValue(this.plugin.noteController.getNoteOption(noteType));
+            toggle.onChange((value) => {
+                this.plugin.noteController.setNoteOption(noteType, value);
+                void this.plugin.database.saveSetting();
+                this.refresh();
+            });
+        });
     }
 }

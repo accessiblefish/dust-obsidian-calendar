@@ -120,24 +120,22 @@ function QuarterItem() {
     </div>
 }
 
-function TodayItem() {
+function TodayItem({today}: { today: DateTime }) {
 
     const dispatch = useAppDispatch();
     const selectedItem = useAppSelector(selectSelectedItem);
     const selectedType = selectedItem.type;
     const selectedDate = selectedItem.date;
 
-    const today = DateTime.now();
-
     let isSelected: boolean = false;
     if (selectedType === SelectedItemType.DAY_ITEM) {
-        isSelected = selectedDate.year === today.year && selectedDate.month === today.month && selectedDate.day === today.day;
+        isSelected = selectedDate.hasSame(today, 'day');
     }
     else if (selectedType === SelectedItemType.WEEK_INDEX_ITEM) {
-        isSelected = selectedDate.year === today.year && selectedDate.weekNumber === today.weekNumber;
+        isSelected = selectedDate.weekYear === today.weekYear && selectedDate.weekNumber === today.weekNumber;
     }
     else if (selectedType === SelectedItemType.MONTH_ITEM) {
-        isSelected = selectedDate.year === today.year && selectedDate.month === today.month;
+        isSelected = selectedDate.hasSame(today, 'month');
     }
     else if (selectedType === SelectedItemType.QUARTER_ITEM) {
         isSelected = selectedDate.year === today.year && selectedDate.quarter === today.quarter;
@@ -149,7 +147,7 @@ function TodayItem() {
     const clickCallback = () => {
         const newSelectedItem = new SelectedItem();
         newSelectedItem.type = selectedItem.type;
-        newSelectedItem.date = today;
+        newSelectedItem.date = DateTime.now().startOf('day');
         dispatch(updateSelectedItem(newSelectedItem));
     }
 
@@ -194,7 +192,7 @@ function ViewSelector() {
 
 }
 
-export default function CalendarViewHeader() {
+export default function CalendarViewHeader({today}: { today: DateTime }) {
     return <div className="d-header-font calendar-header-container">
         <div className="calendar-header-row">
             <YearItem/>
@@ -203,7 +201,7 @@ export default function CalendarViewHeader() {
         <div className="calendar-header-row">
             <MonthItem/>
             <div className="calendar-header-block-label">
-                <TodayItem/>
+                <TodayItem today={today}/>
                 <ViewSelector/>
             </div>
         </div>

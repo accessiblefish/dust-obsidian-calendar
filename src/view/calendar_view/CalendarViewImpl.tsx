@@ -1,4 +1,5 @@
 import {useContext, useEffect, useRef, useState} from "react";
+import {DateTime} from "luxon";
 import DayListOfMonthView from "../../entity/DayListOfMonthView";
 import MonthView from "./MonthView";
 import {useAppSelector} from "../redux/hooks";
@@ -9,11 +10,30 @@ import {CalendarViewType, FontSizeChangeMode} from "../../base/enum"
 import {selectSelectedItem} from "../redux/selectedItemSlice";
 import {PluginContext} from "../context";
 
+function useToday(): DateTime {
+    const [today, setToday] = useState(() => DateTime.now().startOf('day'));
+
+    useEffect(() => {
+        let timeout: number;
+        const updateToday = () => {
+            const now = DateTime.now();
+            const nextToday = now.startOf('day');
+            setToday(current => current.hasSame(nextToday, 'day') ? current : nextToday);
+            timeout = window.setTimeout(updateToday, nextToday.plus({days: 1}).diff(now).as('milliseconds') + 100);
+        };
+        updateToday();
+        return () => window.clearTimeout(timeout);
+    }, []);
+
+    return today;
+}
+
 export default function CalendarViewImpl() {
     const selectedItem = useAppSelector(selectSelectedItem);
     const selectedDate = selectedItem.date;
     const calendarViewType = useAppSelector(selectCalendarViewType);
     const plugin = useContext(PluginContext)!;
+    const today = useToday();
 
     const widthRef = useRef(null);
     const [width, setWidth] = useState(168);
@@ -39,7 +59,7 @@ export default function CalendarViewImpl() {
             resizeObserver.unobserve(element);
             resizeObserver.disconnect();
         };
-    });
+    }, []);
 
     const fontSizeChangeMode = plugin.database.setting.fontSizeChangeMode;
     let fontSizeFactor = plugin.database.setting.immutableFontSizeFactor / 10;
@@ -67,13 +87,13 @@ export default function CalendarViewImpl() {
     if (calendarViewType === CalendarViewType.MONTH) {
         const dayListOfMonthView: DayListOfMonthView = new DayListOfMonthView(selectedDate.year, selectedDate.month);
         return <div style={style as React.CSSProperties} ref={widthRef}>
-            <CalendarViewHeader/>
-            <MonthView dayListOfMonthView={dayListOfMonthView}/>
+            <CalendarViewHeader today={today}/>
+            <MonthView dayListOfMonthView={dayListOfMonthView} today={today}/>
         </div>
     }
     else {
         return <div style={style as React.CSSProperties} ref={widthRef}>
-            <CalendarViewHeader/>
+            <CalendarViewHeader today={today}/>
             <YearView showYear={selectedDate.year}/>
         </div>
     }

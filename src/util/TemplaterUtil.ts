@@ -1,25 +1,38 @@
 import {TAbstractFile} from 'obsidian';
 import TemplateUtil from "./TemplateUtil";
-import DustCalendarPlugin from "../main";
 import Path from "./Path";
 
+interface TemplaterPlugin {
+    settings: {
+        templates_folder: string;
+    };
+    templater: {
+        append_template_to_active_file(templateFile: TAbstractFile): void;
+    };
+}
+
+interface AppWithCommunityPlugins {
+    plugins: {
+        plugins: Record<string, TemplaterPlugin | undefined>;
+    };
+}
 
 export default class TemplaterUtil extends TemplateUtil {
-    constructor(plugin: DustCalendarPlugin) {
-        super(plugin);
+
+    private get templaterPlugin(): TemplaterPlugin | undefined {
+        const app = this.plugin.app as unknown as AppWithCommunityPlugins;
+        return app.plugins.plugins["templater-obsidian"];
     }
 
     public isEnable(): boolean {
-        let pluginList = (this.plugin.app as any).plugins.plugins;
-        return Object.keys(pluginList).includes("templater-obsidian");
+        return this.templaterPlugin !== undefined;
     }
 
     public getTemplateFolder(): Path {
-        return new Path((this.plugin.app as any).plugins.plugins["templater-obsidian"].settings.templates_folder);
+        return new Path(this.templaterPlugin?.settings.templates_folder ?? "");
     }
 
-    public insertTemplateImpl(templateFile: TAbstractFile) {
-        let templatesPlugin = (this.plugin.app as any).plugins.plugins["templater-obsidian"]
-        templatesPlugin.templater.append_template_to_active_file(templateFile);
+    public insertTemplateImpl(templateFile: TAbstractFile): void {
+        this.templaterPlugin?.templater.append_template_to_active_file(templateFile);
     }
 }

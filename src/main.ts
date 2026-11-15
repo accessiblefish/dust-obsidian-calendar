@@ -34,7 +34,7 @@ export default class DustCalendarPlugin extends Plugin {
     }
 
     // 插件开启时执行初始化操作
-    async onload() {
+    async onload(): Promise<void> {
         // 加载插件设置
         await this.database.loadSetting();
         this.templateController.updateTemplatePlugin(this.database.setting.templatePlugin);
@@ -47,49 +47,42 @@ export default class DustCalendarPlugin extends Plugin {
             id: "active-calendar-view",
             name: "打开日历视图",
             callback: () => {
-                DustCalendarPlugin.activateCalendarView(this);
+                void DustCalendarPlugin.activateCalendarView(this);
             }
         });
         this.addCommand({
             id: "open-daily-note",
             name: "打开/创建每日笔记",
             callback: () => {
-                const now = DateTime.now();
-                this.noteController.openNoteByNoteType(DateTime.local(now.year, now.month, now.day), NoteType.DAILY);
+                this.noteController.openNoteByNoteType(DateTime.now(), NoteType.DAILY);
             }
         });
         this.addCommand({
             id: "open-weekly-note",
             name: "打开/创建每周笔记",
             callback: () => {
-                const now = DateTime.now();
-                const monday = now.minus({day: now.weekday - 1});
-                this.noteController.openNoteByNoteType(DateTime.local(monday.year, monday.month, monday.day), NoteType.WEEKLY);
+                this.noteController.openNoteByNoteType(DateTime.now().startOf('week'), NoteType.WEEKLY);
             }
         });
         this.addCommand({
             id: "open-monthly-note",
             name: "打开/创建每月笔记",
             callback: () => {
-                const now = DateTime.now();
-                this.noteController.openNoteByNoteType(DateTime.local(now.year, now.month), NoteType.MONTHLY);
+                this.noteController.openNoteByNoteType(DateTime.now(), NoteType.MONTHLY);
             }
         });
         this.addCommand({
             id: "open-quarterly-note",
             name: "打开/创建季度笔记",
             callback: () => {
-                const now = DateTime.now();
-
-                this.noteController.openNoteByNoteType(DateTime.local(now.year, now.quarter * 3 - 2), NoteType.QUARTERLY);
+                this.noteController.openNoteByNoteType(DateTime.now(), NoteType.QUARTERLY);
             }
         });
         this.addCommand({
             id: "open-yearly-note",
             name: "打开/创建年度笔记",
             callback: () => {
-                const now = DateTime.now();
-                this.noteController.openNoteByNoteType(DateTime.local(now.year), NoteType.YEARLY);
+                this.noteController.openNoteByNoteType(DateTime.now(), NoteType.YEARLY);
             }
         });
 
@@ -101,8 +94,8 @@ export default class DustCalendarPlugin extends Plugin {
     }
 
     // 关闭插件的时候执行释放资源的操作
-    onunload() {
-        this.database.saveSetting();
+    onunload(): void {
+        void this.database.saveSetting();
         this.app.workspace.getLeavesOfType(VIEW_TYPE_CALENDAR).forEach((leaf) => leaf.detach());
     }
 
@@ -110,13 +103,12 @@ export default class DustCalendarPlugin extends Plugin {
         const {workspace} = plugin.app;
 
         // 检查该类型的视图是否存在，如果不存在，则创建
-        let leaf: WorkspaceLeaf | null = null;
-        const leaves = workspace.getLeavesOfType(VIEW_TYPE_CALENDAR);
-        if (leaves.length > 0) {
-            leaf = leaves[0];
-        }
-        else {
+        let leaf: WorkspaceLeaf | null | undefined = workspace.getLeavesOfType(VIEW_TYPE_CALENDAR)[0];
+        if (!leaf) {
             leaf = workspace.getRightLeaf(false);
+            if (!leaf) {
+                return;
+            }
             await leaf.setViewState({type: VIEW_TYPE_CALENDAR, active: true});
         }
 
@@ -124,4 +116,3 @@ export default class DustCalendarPlugin extends Plugin {
         workspace.revealLeaf(leaf);
     }
 }
-

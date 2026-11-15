@@ -15,13 +15,12 @@ import StatisticLabel from "./StatisticLabel";
 function DayItemBody({
                          targetDay,
                          dayListOfMonthView,
-                         isSelected
-                     }: { targetDay: DateTime, dayListOfMonthView: DayListOfMonthView, isSelected: boolean }) {
+                         isSelected,
+                         today
+                     }: { targetDay: DateTime, dayListOfMonthView: DayListOfMonthView, isSelected: boolean, today: DateTime }) {
 
 
     const plugin = useContext(PluginContext)!;
-
-    const today = DateTime.now();
 
     let style = "d-normal-font";
     if (isSelected) {
@@ -30,7 +29,7 @@ function DayItemBody({
     else if (targetDay.month !== dayListOfMonthView.month) {
         style = style.concat(" month-view-other-month");
     }
-    else if (targetDay.hasSame(today, 'year') && targetDay.hasSame(today, 'month') && targetDay.hasSame(today, 'day')) {
+    else if (targetDay.hasSame(today, 'day')) {
         style = style.concat(" month-view-today");
     }
 
@@ -111,8 +110,9 @@ function DayItemFooter({
 
 function DayItem({
                      targetDay,
-                     dayListOfMonthView
-                 }: { targetDay: DateTime, dayListOfMonthView: DayListOfMonthView }) {
+                     dayListOfMonthView,
+                     today
+                 }: { targetDay: DateTime, dayListOfMonthView: DayListOfMonthView, today: DateTime }) {
 
     const dispatch = useAppDispatch();
     const selectedItem = useAppSelector(selectSelectedItem);
@@ -133,14 +133,14 @@ function DayItem({
 
     // 被选中和未被选中日期的背景颜色不同
     let bodyStyle = "month-view-day-item d-unselected-item";
-    const isSelected: boolean = selectedItem.type === SelectedItemType.DAY_ITEM && selectedItem.date.year === targetDay.year && selectedItem.date.month === targetDay.month && selectedItem.date.day === targetDay.day;
+    const isSelected: boolean = selectedItem.type === SelectedItemType.DAY_ITEM && selectedItem.date.hasSame(targetDay, 'day');
     if (isSelected) {
         bodyStyle = "month-view-day-item d-selected-item";
     }
 
     return <div className={bodyStyle} onClick={onClickCallback}
                 onDoubleClick={() => plugin.noteController.openNoteBySelectedItem(selectedItem)}>
-        <DayItemBody targetDay={targetDay} dayListOfMonthView={dayListOfMonthView} isSelected={isSelected}/>
+        <DayItemBody targetDay={targetDay} dayListOfMonthView={dayListOfMonthView} isSelected={isSelected} today={today}/>
         {
             plugin.calendarViewController.getShouldDisplayLunarInfo()
                 ? <DayItemFooter targetDay={targetDay} dayListOfMonthView={dayListOfMonthView} isSelected={isSelected}/>
@@ -169,7 +169,9 @@ function WeekIndexItem({targetDay}: { targetDay: DateTime }) {
     }
 
     let itemStyle = "month-view-week-index-item d-unselected-item";
-    if (selectedItem.type === SelectedItemType.WEEK_INDEX_ITEM && selectedItem.date.weekNumber === targetDay.weekNumber) {
+    if (selectedItem.type === SelectedItemType.WEEK_INDEX_ITEM
+        && selectedItem.date.weekYear === targetDay.weekYear
+        && selectedItem.date.weekNumber === targetDay.weekNumber) {
         itemStyle = "month-view-week-index-item d-selected-item";
     }
 
@@ -184,8 +186,9 @@ function WeekIndexItem({targetDay}: { targetDay: DateTime }) {
 
 function MonthViewRow({
                           dayListOfMonthView,
-                          weekIndex
-                      }: { dayListOfMonthView: DayListOfMonthView, weekIndex: number }) {
+                          weekIndex,
+                          today
+                      }: { dayListOfMonthView: DayListOfMonthView, weekIndex: number, today: DateTime }) {
 
     let monday = dayListOfMonthView.getDayByWeek(weekIndex, WeekEnum.MONDAY);
     let tuesday = dayListOfMonthView.getDayByWeek(weekIndex, WeekEnum.TUESDAY);
@@ -198,13 +201,13 @@ function MonthViewRow({
 
     return <div className='calendar-view-row'>
         <WeekIndexItem targetDay={monday}/>
-        <DayItem targetDay={monday} dayListOfMonthView={dayListOfMonthView}/>
-        <DayItem targetDay={tuesday} dayListOfMonthView={dayListOfMonthView}/>
-        <DayItem targetDay={wednesday} dayListOfMonthView={dayListOfMonthView}/>
-        <DayItem targetDay={thursday} dayListOfMonthView={dayListOfMonthView}/>
-        <DayItem targetDay={friday} dayListOfMonthView={dayListOfMonthView}/>
-        <DayItem targetDay={saturday} dayListOfMonthView={dayListOfMonthView}/>
-        <DayItem targetDay={sunday} dayListOfMonthView={dayListOfMonthView}/>
+        <DayItem targetDay={monday} dayListOfMonthView={dayListOfMonthView} today={today}/>
+        <DayItem targetDay={tuesday} dayListOfMonthView={dayListOfMonthView} today={today}/>
+        <DayItem targetDay={wednesday} dayListOfMonthView={dayListOfMonthView} today={today}/>
+        <DayItem targetDay={thursday} dayListOfMonthView={dayListOfMonthView} today={today}/>
+        <DayItem targetDay={friday} dayListOfMonthView={dayListOfMonthView} today={today}/>
+        <DayItem targetDay={saturday} dayListOfMonthView={dayListOfMonthView} today={today}/>
+        <DayItem targetDay={sunday} dayListOfMonthView={dayListOfMonthView} today={today}/>
     </div>
 }
 
@@ -221,7 +224,7 @@ function MonthViewHeader() {
     </div>
 }
 
-export default function MonthView({dayListOfMonthView}: { dayListOfMonthView: DayListOfMonthView }) {
+export default function MonthView({dayListOfMonthView, today}: { dayListOfMonthView: DayListOfMonthView, today: DateTime }) {
 
     let totalWeeks: number = dayListOfMonthView.totalWeeks;
 
@@ -229,7 +232,7 @@ export default function MonthView({dayListOfMonthView}: { dayListOfMonthView: Da
         <MonthViewHeader/>
         {
             range(0, totalWeeks).map((v) => {
-                return <MonthViewRow dayListOfMonthView={dayListOfMonthView} weekIndex={v} key={v}/>
+                return <MonthViewRow dayListOfMonthView={dayListOfMonthView} weekIndex={v} today={today} key={v}/>
             })
         }
     </div>

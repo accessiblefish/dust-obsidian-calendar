@@ -1,102 +1,90 @@
-<h1 align="center">Dust Calendar</h1>
+# Dust Calendar
 
-<p align="center">
-    <img alt="Release version" src="https://img.shields.io/github/v/release/a-nano-dust/dust-obsidian-calendar?style=for-the-badge">
-    <img alt="Download count" src="https://img.shields.io/github/downloads/a-nano-dust/dust-obsidian-calendar/total?style=for-the-badge">
-</p>
-<p align="center">
-    <span>Dust Calendar 是一款更符合中国习惯的 Obsidian 插件，它提供了日历浏览以及与日历联动的周期性笔记功能。</span>
-</p>
+一款更符合中文使用习惯的 Obsidian 日历插件，支持公历、农历、节气、节假日、调休信息，以及与日历联动的周期性笔记。
 
+![Dust Calendar 日历视图](./resource/overview.jpg)
 
-## 关于插件
+## 项目说明
 
-更符合中国习惯的日历插件，支持同时显示公历、农历、星期、节气、节假日、调休等信息，支持切换月视图和年视图，支持关联创建周期性笔记。周期性笔记包括：每日笔记、每周笔记、每月笔记、季度笔记、年度笔记。
+本仓库是 Dust Calendar 的个人维护版本，用于继续修复问题、适配 Obsidian，并维护一套可重复构建和发布的流程。
 
-![](./resource/overview.jpg)
+**感谢原作者纳米级尘埃（a-nano-dust）开发并开源 Dust Calendar。** 本项目基于原仓库 [a-nano-dust/dust-obsidian-calendar](https://github.com/a-nano-dust/dust-obsidian-calendar) 修改，保留原项目的 MIT 许可证和版权说明。没有原作者的工作，就不会有这个项目。
+
+## 功能
+
+- 月视图和年视图切换。
+- 显示星期、农历、节气、节假日及调休信息。
+- 快速返回今天，并在本地午夜自动更新日期高亮。
+- 创建和打开每日、每周、每月、季度及年度笔记。
+- 支持 Obsidian 核心模板插件和 Templater。
+- 在日历中显示笔记字数和未完成待办。
+- 支持跟随 Obsidian、跟随侧边栏或固定字体大小。
+- 季度名称可显示为数字或“春夏秋冬”。
+
+## 当前维护版改进
+
+- 修复跨午夜后第一次点击“今”跳到昨天的问题。
+- 跨午夜自动更新“今”按钮和日期高亮，无需重新打开日历。
+- 修复 ISO 周跨年时当前周和选中周的判断。
+- 使用官方 `eslint-plugin-obsidianmd` 完整推荐规则，保持 0 错误、0 警告。
+- 清理废弃 API、不安全类型、未处理 Promise 和冗余依赖。
+- 优化统计读取、日历刷新防抖、事件解绑及 React 组件生命周期。
 
 ## 安装
 
-### 从 Obsidian 的社区插件来安装
+当前维护版尚未提交到 Obsidian 社区插件市场，请使用手动安装。桌面版 Obsidian 适用。
 
-1. 打开 `设置/第三方插件`；
-2. 关闭 `安全模式`；
-3. 点击 `浏览` 按钮来查看第三方插件市场；
-4. 输入搜索：**Dust Calendar**；
-5. 点击 `安装` 按钮；
-6. 一旦安装成功，先关闭当前社区插件窗口，然后在已安装插件列表下激活刚安装的插件；
+### 从 Release 安装
 
-### 手动安装
+如果仓库已经发布版本：
 
-1. 下载 [latest release](https://github.com/a-nano-dust/dust-obsidian-calendar/releases/latest)；
-2. 解压并提取 dust-obsidian-calendar 文件夹，然后放到你 Obsidian 库中的插件目录中 `<仓库根目录>/.obsidian/plugins/` （注意： `.obsidian` 文件夹可能被隐藏了，我们需要先将该文件夹展示出来）
-3. 打开 `设置/第三方插件`，启用该插件。
+1. 打开 [Releases](https://github.com/accessiblefish/dust-obsidian-calendar/releases)，下载最新版本的 `main.js`、`manifest.json` 和 `styles.css`。
+2. 在 Obsidian 库中创建目录：
 
-## 日历视图
+   ```text
+   <你的库>/.obsidian/plugins/dust-calendar/
+   ```
 
-鼠标移动到日历顶部的年份区域，年份区域左右会出现切换年份的箭头，点击即可切换年份。日历顶部的月份和季度区域操作方式同理。
+3. 将三个文件放入该目录。
+4. 重启 Obsidian，在“设置 → 第三方插件”中启用 **Dust Calendar**。
 
-点击日历顶部的 `今`，可能会出现以下几种情况：
+如果从原版升级，可以保留目录中的 `data.json`，以继续使用原有设置。建议替换文件前先禁用插件并备份设置。
 
-- 如果已经选中了月视图下的日期，日历视图会切换选中到当前日期；
-- 如果已经选中了月视图下的周序号，日历视图会切换选中当前周序号；
-- 如果已经选中了年视图下的月份，日历视图会切换选中当前月份；
-- 如果已经选中了年视图下的季度序号，日历视图会切换选中当前季度序号。
+## 使用
 
-点击日历顶部的 `月` 或 `年`，可以从月视图切换到年视图，或从年视图切换到月视图。
+### 日历导航
 
-### 字体大小
+- 将鼠标移到年份、季度或月份区域，使用两侧箭头切换时间范围。
+- 点击“今”返回当前日期、周、月份或季度。
+- 点击“月”或“年”切换视图。
+- 双击日期、周序号、月份、季度或年份，可创建或打开对应的周期性笔记。
 
-如果觉得日历界面的字体大小不合适，我们可以通过插件设置进行调整。目前共提供了三种调整模式：
+### 周期性笔记
 
-- 跟随 Obsidian：日历界面的字体大小与 Obsidian 字体大小联动。如果我们开启了快速调整字体大小选项，那么可通过 Ctrl 与鼠标滚轮（或使用触摸板手势）快速调整字体大小。
-- 跟随侧边栏：日历界面的字体大小与所在侧边栏的宽度联动。
-- 固定大小：需要手动设置日历界面的字体大小。
+在插件设置中启用相应笔记类型，并配置文件命名规则。命名规则使用 [Luxon 日期格式](https://moment.github.io/luxon/#/formatting?id=table-of-tokens)。
 
-### 季度命名方式
+如需自动填充模板：
 
-我们可以在插件设置中调整季度命名方式，选择以 **数字** 命名或以 **春夏秋冬** 命名，这将影响日历头部季度区域和年视图中的季度名称。
+1. 选择 Obsidian 核心模板插件或 [Templater](https://github.com/SilentVoid13/Templater)。
+2. 在对应插件中配置模板目录。
+3. 在 Dust Calendar 中为每种周期性笔记设置模板文件。
 
-## 周期性笔记
+![周期性笔记设置](./resource/setting.jpg)
 
-首先，我们需要在插件设置中打开对应的选项。
+也可以通过 Obsidian 命令面板创建当前日期对应的周期性笔记。
 
-然后，我们需要配置周期性笔记的模板路径（包含笔记所在文件夹和笔记文件名），模板控制字符与 [luxon](https://moment.github.io/luxon/#/formatting?id=table-of-tokens) 相同。
+![通过命令创建笔记](./resource/create_note_by_command.jpg)
 
-除此之外，Dust Calendar 支持与一些模板插件进行联动，在创建笔记的时候自动应用模板。为了使用这项功能，我们需要选择指定一款模板插件，并为需要使用模板功能的周期性笔记配置模板文件。目前，Dust Calendar 支持 Obsidian 核心插件中的模板和 [Templater](https://github.com/SilentVoid13/Templater) 。
+### 笔记统计
 
-如下展示了一个可能的配置内容：
+Dust Calendar 会统计关联笔记的字数和未完成待办，并以圆点或圆孔标注在日历中。可在设置中调整每点对应的字数、点数上限和待办标注方式。
 
-![](./resource/setting.jpg)
+![笔记统计设置](./resource/setting_statistic.jpg)
 
-配置完成后，按照如下方式进行操作即可创建笔记：
+## 反馈
 
-- 创建每日笔记：在月视图下双击日期；
-- 创建每周笔记：在月视图下双击周序号；
-- 创建每月笔记：在年视图下双击月份，或双击日历顶部的月份；
-- 创建季度笔记：在年视图下双击季度序号，或双击日历顶部的季度；
-- 创建年度笔记：双击日历顶部的年份。
+使用问题或改进建议请提交到本仓库的 [GitHub Issues](https://github.com/accessiblefish/dust-obsidian-calendar/issues)。
 
-当然，我们也可以通过命令创建与当前日期匹配的周期性笔记。
+## 许可证
 
-![](./resource/create_note_by_command.jpg)
-
-### 笔记信息统计
-
-Dust Calendar 会统计笔记中的字数和待办，并将这些信息以小圆点或小圆孔的方式标注在与笔记关联的日历组件上。在插件设置中，允许设置多少字标注一个点以及点数上限，还可以设置待办的标注方式。
-
-![统计信息设置项](./resource/setting_statistic.jpg)
-
-待办的标注方式有三种：
-
-- 不标注：日历界面中不显示待办信息；
-- 颜色标注：如果笔记中包含未完成的待办，用于标注笔记字数的小圆点会以一种特殊的颜色显示（默认是警告色）；
-- 圆孔标注：如果笔记中包含未完成的待办，就额外标注一个小圆孔。
-
-![统计信息（待办圆孔标注）](./resource/statistic_hole_annotation.jpg)
-
-![统计信息（待办颜色标注）](./resource/statistic_color_annotation.jpg)
-
-## 联系和反馈
-
-如果你在使用该插件过程中，遇到各种问题、或有什么好的建议，欢迎在 [GitHub issues](https://github.com/a-nano-dust/dust-obsidian-calendar/issues) 中提出。
+本项目继续采用 [MIT License](./LICENSE)。原作者版权及许可证声明保留在 `LICENSE` 文件中。

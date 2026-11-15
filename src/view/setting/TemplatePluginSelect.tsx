@@ -11,7 +11,7 @@ export default function TemplatePluginSelect({plugin}: { plugin: DustCalendarPlu
         const ret = parseInt(e.target.value);
         setTemplatePlugin(ret);
         plugin.templateController.updateTemplatePlugin(ret);
-        plugin.mainSettingTab.display();
+        plugin.mainSettingTab.refresh();
     };
 
     // 如果选择了模板插件，需要检查其是否启用

@@ -7,6 +7,6 @@ export default class SelectedItem {
 
     constructor() {
         this.type = SelectedItemType.DAY_ITEM;
-        this.date = DateTime.now();
+        this.date = DateTime.now().startOf('day');
     }
 }

@@ -1,4 +1,3 @@
-import {WorkspaceLeaf} from 'obsidian';
 import DustCalendarPlugin from "../main";
 import {CalendarView, VIEW_TYPE_CALENDAR} from "../view/CalendarView";
 
@@ -10,20 +9,18 @@ import {CalendarView, VIEW_TYPE_CALENDAR} from "../view/CalendarView";
 export class CalendarViewController {
 
     public readonly plugin: DustCalendarPlugin;
-    private requestCounter: number;                             // 请求刷新的次数
-    private lastRequestTime: number;                            // 上次请求时间
+    private flushTimeout: number | null;
 
     constructor(plugin: DustCalendarPlugin) {
         this.plugin = plugin;
-        this.requestCounter = 0;
-        this.lastRequestTime = 0;
+        this.flushTimeout = null;
     }
 
     public getShouldDisplayLunarInfo(): boolean {
         return this.plugin.database.setting.shouldDisplayLunarInfo;
     }
 
-    public setShouldDisplayLunarInfo(shouldDisplayLunarInfo: boolean) {
+    public setShouldDisplayLunarInfo(shouldDisplayLunarInfo: boolean): void {
         this.plugin.database.setting.shouldDisplayLunarInfo = shouldDisplayLunarInfo;
     }
 
@@ -31,21 +28,18 @@ export class CalendarViewController {
         return this.plugin.database.setting.shouldDisplayHolidayInfo;
     }
 
-    public setShouldDisplayHolidayInfo(shouldDisplayHolidayInfo: boolean): boolean {
-        return this.plugin.database.setting.shouldDisplayHolidayInfo = shouldDisplayHolidayInfo;
+    public setShouldDisplayHolidayInfo(shouldDisplayHolidayInfo: boolean): void {
+        this.plugin.database.setting.shouldDisplayHolidayInfo = shouldDisplayHolidayInfo;
     }
 
 
     // 立即刷新
     public forceFlush(): void {
-        const {workspace} = this.plugin.app;
-
-        // 检查该类型的视图是否存在，如果不存在，则创建
-        let leaf: WorkspaceLeaf | null = null;
-        const leaves = workspace.getLeavesOfType(VIEW_TYPE_CALENDAR);
-        if (leaves.length > 0) {
-            leaf = leaves[0];
-            (leaf.view as CalendarView).flush();
+        const leaves = this.plugin.app.workspace.getLeavesOfType(VIEW_TYPE_CALENDAR);
+        for (const leaf of leaves) {
+            if (leaf.view instanceof CalendarView) {
+                leaf.view.flush();
+            }
         }
     }
 
@@ -55,20 +49,12 @@ export class CalendarViewController {
      * 默认情况下，该函数会在调用1秒之后刷新界面，在此期间，如果该函数再次被调用，那么刷新时间会继续向后顺延1秒
      */
     public requestFlush(): void {
-        this.requestCounter = this.requestCounter + 1;
-        this.lastRequestTime = performance.now();
-        setTimeout(() => {
-            if (this.requestCounter <= 0) {
-                return;
-            }
-            const now = performance.now();
-            if (now - this.lastRequestTime < 990) {
-                return;
-            }
-            this.requestCounter = 0;
+        if (this.flushTimeout !== null) {
+            window.clearTimeout(this.flushTimeout);
+        }
+        this.flushTimeout = window.setTimeout(() => {
+            this.flushTimeout = null;
             this.forceFlush();
         }, 1000);
     }
-
-
 }

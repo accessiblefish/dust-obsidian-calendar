@@ -1,28 +1,38 @@
 import {TAbstractFile} from 'obsidian';
-import DustCalendarPlugin from "../main";
 import Path from "./Path";
 import TemplateUtil from "./TemplateUtil";
 
+interface ObsidianTemplatesPlugin {
+    instance: {
+        options: {
+            folder: string;
+        };
+        insertTemplate(templateFile: TAbstractFile): void;
+    };
+}
+
+interface AppWithInternalPlugins {
+    internalPlugins: {
+        plugins: Record<string, ObsidianTemplatesPlugin | undefined>;
+    };
+}
 
 export default class ObsidianTemplateUtil extends TemplateUtil {
 
-    constructor(plugin: DustCalendarPlugin) {
-        super(plugin);
+    private get templatesPlugin(): ObsidianTemplatesPlugin | undefined {
+        const app = this.plugin.app as unknown as AppWithInternalPlugins;
+        return app.internalPlugins.plugins.templates;
     }
 
     public isEnable(): boolean {
-        let pluginList = (this.plugin.app as any).internalPlugins.plugins;
-        return Object.keys(pluginList).includes("templates");
+        return this.templatesPlugin !== undefined;
     }
 
     public getTemplateFolder(): Path {
-        return new Path((this.plugin.app as any).internalPlugins.plugins.templates.instance.options.folder);
+        return new Path(this.templatesPlugin?.instance.options.folder ?? "");
     }
 
-    public insertTemplateImpl(templateFile: TAbstractFile) {
-        let templatesPlugin = (this.plugin.app as any).internalPlugins.plugins.templates;
-        templatesPlugin.instance.insertTemplate(templateFile);
+    public insertTemplateImpl(templateFile: TAbstractFile): void {
+        this.templatesPlugin?.instance.insertTemplate(templateFile);
     }
-
-
 }

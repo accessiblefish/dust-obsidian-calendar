@@ -1,6 +1,6 @@
 import esbuild from "esbuild";
-import process from "process";
-import builtins from "builtin-modules";
+import process from "node:process";
+import {builtinModules} from "node:module";
 import copyPluginPkg from "@sprout2000/esbuild-copy-plugin";
 
 
@@ -38,7 +38,7 @@ const result = await esbuild.build({
         "@lezer/common",
         "@lezer/highlight",
         "@lezer/lr",
-        ...builtins],
+        ...builtinModules],
     banner: {
         js: banner,
     },

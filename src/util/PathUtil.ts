@@ -18,7 +18,7 @@ export default class PathUtil {
         // 指定的路径存在，不需要创建
         const abstractFile = vault.getAbstractFileByPath(path.string);
         if (abstractFile !== null) {
-            return abstractFile!;
+            return abstractFile;
         }
 
         // 递归，确保上级路径都存在
@@ -27,12 +27,12 @@ export default class PathUtil {
         // 指定的路径文件夹，创建文件夹
         if (path.isFolder) {
             let targetFolder = await vault.createFolder(path.string);
-            return targetFolder as TAbstractFile;
+            return targetFolder;
         }
 
         // 指定的路径是文件，
         let targetFile = await vault.create(path.string, "");
-        return targetFile as TAbstractFile;
+        return targetFile;
     }
 
 }

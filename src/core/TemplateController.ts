@@ -113,16 +113,16 @@ export default class TemplateController {
             return;
         }
 
-        this.notify(this, templateFile);
+        this.notify(templateFile);
     }
 
-    public notify(templateController: TemplateController, templateFile: TAbstractFile) {
+    private notify(templateFile: TAbstractFile): void {
         // 循环等待新创建的文件可被编辑，再插入模板
-        if (templateController.plugin.app.workspace.activeEditor !== null) {
-            templateController.insertTemplateImpl(templateFile);
+        if (this.plugin.app.workspace.activeEditor !== null) {
+            this.insertTemplateImpl(templateFile);
         }
         else {
-            setTimeout(() => templateController.notify(templateController, templateFile), 100);
+            window.setTimeout(() => this.notify(templateFile), 100);
         }
     }
 

@@ -10,7 +10,7 @@ export default function FontSizeChangeModeSelect({plugin}: { plugin: DustCalenda
         const ret = parseInt(e.target.value);
         setFontSizeChangeMode(ret);
         plugin.viewController.setFontSizeChangeMode(ret);
-        plugin.mainSettingTab.display();
+        plugin.mainSettingTab.refresh();
     };
 
     return <>
