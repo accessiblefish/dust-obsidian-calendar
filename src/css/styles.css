@@ -128,11 +128,17 @@
     font-size: 12px;
 }
 
-.month-view-today, .month-view-special-date {
+.month-view-today {
     color: var(--text-accent);
 }
 
-.month-view-today-selected {
+.month-view-special-date {
+    color: var(--text-accent);
+}
+
+.month-view-today.month-view-today-selected {
+    color: var(--text-on-accent);
+    background-color: transparent;
 }
 
 .month-view-other-month {
@@ -172,6 +178,14 @@
 .statistic-label-hole {
     fill: none;
     stroke: var(--text-normal);
+}
+
+.month-view-day-item.d-selected-item .statistic-label-dot:not(.statistic-label-dot-with-todo) {
+    fill: var(--text-on-accent);
+}
+
+.month-view-day-item.d-selected-item .statistic-label-hole {
+    stroke: var(--text-on-accent);
 }
 
 .circular-label, .today-label, .view-selector-label {

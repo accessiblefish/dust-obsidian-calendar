@@ -23,14 +23,14 @@ function DayItemBody({
     const plugin = useContext(PluginContext)!;
 
     let style = "d-normal-font";
+    if (targetDay.hasSame(today, 'day')) {
+        style = style.concat(" month-view-today");
+    }
     if (isSelected) {
         style = style.concat(" month-view-today-selected");
     }
     else if (targetDay.month !== dayListOfMonthView.month) {
         style = style.concat(" month-view-other-month");
-    }
-    else if (targetDay.hasSame(today, 'day')) {
-        style = style.concat(" month-view-today");
     }
 
     return <div className={style}>
