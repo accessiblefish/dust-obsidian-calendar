@@ -1,6 +1,6 @@
 {
 	"name": "@accessiblefish/dust-calendar",
-	"version": "1.4.1",
+	"version": "1.4.2",
 	"description": "a calendar plugin for obsidian",
 	"main": "main.js",
 	"scripts": {
@@ -8,7 +8,11 @@
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
 		"lint": "eslint ."
 	},
-	"keywords": ["obsidian", "calendar", "chinese-calendar"],
+	"keywords": [
+		"obsidian",
+		"calendar",
+		"chinese-calendar"
+	],
 	"author": "accessiblefish",
 	"license": "MIT",
 	"repository": {

@@ -1,2 +1,11 @@
-/dist/*
+# Dependencies
 /node_modules/
+
+# Build output
+/dist/
+
+# Logs
+*.log
+
+# macOS
+.DS_Store

@@ -30,26 +30,6 @@
 - 清理废弃 API、不安全类型、未处理 Promise 和冗余依赖。
 - 优化统计读取、日历刷新防抖、事件解绑及 React 组件生命周期。
 
-## 安装
-
-当前维护版尚未提交到 Obsidian 社区插件市场，请使用手动安装。桌面版 Obsidian 适用。
-
-### 从 Release 安装
-
-如果仓库已经发布版本：
-
-1. 打开 [Releases](https://github.com/accessiblefish/dust-obsidian-calendar/releases)，下载最新版本的 `main.js`、`manifest.json` 和 `styles.css`。
-2. 在 Obsidian 库中创建目录：
-
-   ```text
-   <你的库>/.obsidian/plugins/dust-calendar/
-   ```
-
-3. 将三个文件放入该目录。
-4. 重启 Obsidian，在“设置 → 第三方插件”中启用 **Dust Calendar**。
-
-如果从原版升级，可以保留目录中的 `data.json`，以继续使用原有设置。建议替换文件前先禁用插件并备份设置。
-
 ## 使用
 
 ### 日历导航

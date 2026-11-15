@@ -148,7 +148,7 @@
 }
 
 .statistic-label {
-    max-width: calc((16px + var(--d-font-size-factor) * 4px) * var(--d-font-size-custom-enable) + (12px + 0.4 * var(--font-text-size)) * var(--d-font-size-follow-obsidian));
+    width: 18px;
     min-height: 8px;
     display: flex;
     flex-wrap: wrap;
@@ -158,7 +158,7 @@
 .statistic-label-dot, .statistic-label-hole, .statistic-label-placeholder {
     height: 6px;
     width: 6px;
-    margin: 1px;
+    margin: 0;
 }
 
 .statistic-label-dot {
