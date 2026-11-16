@@ -120,43 +120,31 @@ function QuarterItem() {
     </div>
 }
 
-function TodayItem({today}: { today: DateTime }) {
-
-    const dispatch = useAppDispatch();
-    const selectedItem = useAppSelector(selectSelectedItem);
-    const selectedType = selectedItem.type;
+function isTodaySelected(selectedItem: SelectedItem, today: DateTime): boolean {
     const selectedDate = selectedItem.date;
+    switch (selectedItem.type) {
+        case SelectedItemType.DAY_ITEM:
+            return selectedDate.hasSame(today, 'day');
+        case SelectedItemType.WEEK_INDEX_ITEM:
+            return selectedDate.weekYear === today.weekYear && selectedDate.weekNumber === today.weekNumber;
+        case SelectedItemType.MONTH_ITEM:
+            return selectedDate.hasSame(today, 'month');
+        case SelectedItemType.QUARTER_ITEM:
+            return selectedDate.year === today.year && selectedDate.quarter === today.quarter;
+        case SelectedItemType.YEAR_ITEM:
+            return selectedDate.year === today.year;
+        default:
+            return false;
+    }
+}
 
-    let isSelected: boolean = false;
-    if (selectedType === SelectedItemType.DAY_ITEM) {
-        isSelected = selectedDate.hasSame(today, 'day');
-    }
-    else if (selectedType === SelectedItemType.WEEK_INDEX_ITEM) {
-        isSelected = selectedDate.weekYear === today.weekYear && selectedDate.weekNumber === today.weekNumber;
-    }
-    else if (selectedType === SelectedItemType.MONTH_ITEM) {
-        isSelected = selectedDate.hasSame(today, 'month');
-    }
-    else if (selectedType === SelectedItemType.QUARTER_ITEM) {
-        isSelected = selectedDate.year === today.year && selectedDate.quarter === today.quarter;
-    }
-    else if (selectedType === SelectedItemType.YEAR_ITEM) {
-        isSelected = selectedDate.year === today.year;
-    }
+function TodayItem({today, onSelectToday}: { today: DateTime, onSelectToday: () => void }) {
+    const selectedItem = useAppSelector(selectSelectedItem);
+    const className = isTodaySelected(selectedItem, today)
+        ? "today-label d-selected-item"
+        : "today-label d-unselected-item";
 
-    const clickCallback = () => {
-        const newSelectedItem = new SelectedItem();
-        newSelectedItem.type = selectedItem.type;
-        newSelectedItem.date = DateTime.now().startOf('day');
-        dispatch(updateSelectedItem(newSelectedItem));
-    }
-
-    if (isSelected) {
-        return <div className="today-label d-selected-item">今</div>
-    }
-    else {
-        return <div className="today-label d-unselected-item" onClick={clickCallback}>今</div>
-    }
+    return <div className={className} onClick={onSelectToday}>今</div>
 }
 
 function ViewSelector() {
@@ -192,7 +180,7 @@ function ViewSelector() {
 
 }
 
-export default function CalendarViewHeader({today}: { today: DateTime }) {
+export default function CalendarViewHeader({today, onSelectToday}: { today: DateTime, onSelectToday: () => void }) {
     return <div className="d-header-font calendar-header-container">
         <div className="calendar-header-row">
             <YearItem/>
@@ -201,7 +189,7 @@ export default function CalendarViewHeader({today}: { today: DateTime }) {
         <div className="calendar-header-row">
             <MonthItem/>
             <div className="calendar-header-block-label">
-                <TodayItem today={today}/>
+                <TodayItem today={today} onSelectToday={onSelectToday}/>
                 <ViewSelector/>
             </div>
         </div>

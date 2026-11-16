@@ -6,7 +6,7 @@ export const store = configureStore({
     middleware: (getDefaultMiddleware) => {
         return getDefaultMiddleware({
             serializableCheck: {
-                ignoredActions: ["showItem/updateShowItem", "selectedItem/updateSelectedItem", "today/updateToday"],
+                ignoredActions: ["showItem/updateShowItem", "selectedItem/updateSelectedItem", "selectedItem/updateSelectedDate", "today/updateToday"],
                 ignoredPaths: ["showItem.value", "selectedItem.value", "today.value"]
             }
         });

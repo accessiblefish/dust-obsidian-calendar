@@ -2,16 +2,12 @@ export default class Path {
 
     private _path: string;
     private _parent: string | null;
-    private _filename: string | null;
     private _extension: string | null;
 
     constructor(path: string) {
         this._path = path;
-
         this._parent = null;
-        this._filename = null;
         this._extension = null;
-
         this.normalize();
     }
 
@@ -20,21 +16,8 @@ export default class Path {
     }
 
     get parent(): Path {
-        this.parseFilename();
+        this.parseParent();
         return new Path(this._parent!);
-    }
-
-    get filename(): Path {
-        this.parseFilename();
-        return new Path(this._filename!);
-    }
-
-    get pureFilename(): Path {
-        this.parseFilename();
-        this.parseExtension();
-        let pattern: RegExp = new RegExp("".concat(this._extension!, "$"));
-        let newPath = this._filename!.replace(pattern, "");
-        return new Path(newPath);
     }
 
     get extension(): Path {
@@ -44,11 +27,7 @@ export default class Path {
 
     get isFolder(): boolean {
         this.parseExtension();
-        return this.extension.string.length === 0;
-    }
-
-    get isFile(): boolean {
-        return !this.isFolder;
+        return this._extension!.length === 0;
     }
 
     public append(path: Path): Path {
@@ -59,27 +38,18 @@ export default class Path {
     }
 
     private normalize(): void {
-        // 删除开头的 ./
-        this._path = this._path.replace(/^\.\//,"");
-        // 删除结尾的 /
+        this._path = this._path.replace(/^\.\//, "");
         this._path = this._path.replace(/\/$/, "");
-        // 解析 . 和 .. 为更简洁的形式
         this._path = this._path.replace(/\/\.\//, "/");
         this._path = this._path.replace(/\/.*\/\.\.\//, "/");
         this._path = this._path.replace(/^.*\/\.\.\//, "/");
     }
 
-    private parseFilename(): void {
-        if (this._filename !== null) {
+    private parseParent(): void {
+        if (this._parent !== null) {
             return;
         }
-        let index = this._path.lastIndexOf("/");
-
-        if (index == -1) {
-            this._filename = "";
-            this._parent = "";
-        }
-        this._filename = this._path.substring(index + 1);
+        const index = this._path.lastIndexOf("/");
         this._parent = this._path.substring(0, index);
     }
 
@@ -87,11 +57,8 @@ export default class Path {
         if (this._extension !== null) {
             return;
         }
-        let index = this._path.lastIndexOf(".");
-        if (index === -1) {
-            this._extension = "";
-            return;
-        }
-        this._extension = this._path.substring(index);
+        const filenameStart = this._path.lastIndexOf("/") + 1;
+        const index = this._path.lastIndexOf(".");
+        this._extension = index < filenameStart ? "" : this._path.substring(index);
     }
 }

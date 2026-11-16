@@ -1,4 +1,4 @@
-import {MarkdownView, TAbstractFile, TFile} from "obsidian";
+import {MarkdownView, Notice, TAbstractFile, TFile} from "obsidian";
 import {DateTime} from "luxon";
 import {NoteType, SelectedItemType} from "../base/enum";
 import SelectedItem from "../entity/SelectedItem";
@@ -7,18 +7,15 @@ import PathUtil from "../util/PathUtil";
 import ConfirmCreatingNoteModal from "../view/modal/ConfirmCreatingNoteModal";
 import DustCalendarPlugin from "../main";
 
-
 /**
  * 封装笔记操作
  */
 export default class NoteController {
 
     public readonly plugin: DustCalendarPlugin;
-    private noteType: NoteType;
 
     constructor(plugin: DustCalendarPlugin) {
         this.plugin = plugin;
-        this.noteType = NoteType.DAILY;
     }
 
     public getNoteOption(noteType: NoteType): boolean {
@@ -181,47 +178,46 @@ export default class NoteController {
         if (noteFilename === null) {
             return;
         }
-        this.noteType = noteType;
-        this.openNoteByFilename(new Path(noteFilename));
+        this.openNoteByFilename(new Path(noteFilename), noteType);
     }
 
-    public openNoteByFilename(filename: Path): void {
+    public openNoteByFilename(filename: Path, noteType: NoteType): void {
         const vault = this.plugin.app.vault;
         const file = vault.getAbstractFileByPath(filename.string);
         if (file instanceof TFile) {
-            this.openNoteTabView(file);
+            void this.openNoteTabView(file);
             return;
         }
         if (file !== null) {
             return;
         }
 
-        // 检查新建笔记时是否需要弹窗
         if (this.plugin.database.setting.shouldConfirmBeforeCreatingNote) {
-            const modal = new ConfirmCreatingNoteModal(filename, this.plugin);
+            const modal = new ConfirmCreatingNoteModal(filename, this.plugin, noteType);
             modal.open();
         }
         else {
-            window.setTimeout(() => {
-                void this.createNote(filename);
-            }, 0);
+            void this.createNote(filename, noteType);
         }
     }
 
-    public async createNote(filename: Path): Promise<void> {
-        const abstractFile: TAbstractFile = await PathUtil.create(filename, this.plugin.app.vault);
-        if (!(abstractFile instanceof TFile)) {
-            return;
+    public async createNote(filename: Path, noteType: NoteType): Promise<void> {
+        try {
+            const abstractFile: TAbstractFile = await PathUtil.create(filename, this.plugin.app.vault);
+            if (!(abstractFile instanceof TFile)) {
+                return;
+            }
+            await this.openNoteTabView(abstractFile);
+            this.plugin.templateController.insertTemplate(noteType, abstractFile);
+            this.plugin.noteStatisticController.addTaskByFile(abstractFile);
         }
-        this.openNoteTabView(abstractFile);
-        this.plugin.templateController.insertTemplate(this.noteType);
-        // 新建文件之后，需要更新统计信息
-        this.plugin.noteStatisticController.addTaskByFile(abstractFile);
+        catch {
+            new Notice(`无法创建笔记：${filename.string}`);
+        }
     }
 
-    private openNoteTabView(tFile: TFile): void {
+    private async openNoteTabView(tFile: TFile): Promise<void> {
         const {workspace} = this.plugin.app;
-        // 寻找已打开的标签页
         const openedLeaf = workspace.getLeavesOfType("markdown").find(leaf =>
             leaf.view instanceof MarkdownView && leaf.view.file?.path === tFile.path
         );
@@ -232,10 +228,14 @@ export default class NoteController {
         }
 
         const targetLeaf = workspace.getLeaf("tab");
-        void targetLeaf.openFile(tFile);
-        workspace.revealLeaf(targetLeaf);
-        // 移动焦点到笔记编辑区域
-        workspace.setActiveLeaf(targetLeaf, {focus: true});
+        try {
+            await targetLeaf.openFile(tFile);
+            workspace.revealLeaf(targetLeaf);
+            workspace.setActiveLeaf(targetLeaf, {focus: true});
+        }
+        catch {
+            new Notice(`无法打开笔记：${tFile.path}`);
+        }
     }
 
 }

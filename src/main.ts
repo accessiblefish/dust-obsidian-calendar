@@ -95,6 +95,7 @@ export default class DustCalendarPlugin extends Plugin {
 
     // 关闭插件的时候执行释放资源的操作
     onunload(): void {
+        this.calendarViewController.dispose();
         void this.database.saveSetting();
         this.app.workspace.getLeavesOfType(VIEW_TYPE_CALENDAR).forEach((leaf) => leaf.detach());
     }

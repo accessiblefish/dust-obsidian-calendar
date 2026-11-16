@@ -10,16 +10,8 @@ export default class NoteStatistic {
     }
 
     public equals(another: NoteStatistic): boolean {
-        if (this.totalWords !== another.totalWords) {
-            return false;
-        }
-        if (this.totalDots !== another.totalDots) {
-            return false;
-        }
-        if (this.hasUnfinishedTasks !== another.hasUnfinishedTasks) {
-            return false;
-        }
-
-        return true;
+        return this.totalWords === another.totalWords
+            && this.totalDots === another.totalDots
+            && this.hasUnfinishedTasks === another.hasUnfinishedTasks;
     }
 }

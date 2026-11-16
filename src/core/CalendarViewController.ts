@@ -57,4 +57,11 @@ export class CalendarViewController {
             this.forceFlush();
         }, 1000);
     }
+
+    public dispose(): void {
+        if (this.flushTimeout !== null) {
+            window.clearTimeout(this.flushTimeout);
+            this.flushTimeout = null;
+        }
+    }
 }

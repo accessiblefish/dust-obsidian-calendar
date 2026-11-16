@@ -1,7 +1,5 @@
 import Path from "./Path";
-
 import {TAbstractFile, Vault} from "obsidian"
-
 
 export default class PathUtil {
 
@@ -10,29 +8,24 @@ export default class PathUtil {
     }
 
     public static async create(path: Path, vault: Vault): Promise<TAbstractFile> {
-        // 根目录
+        return PathUtil.createImpl(path, vault, path.isFolder);
+    }
+
+    private static async createImpl(path: Path, vault: Vault, isFolder: boolean): Promise<TAbstractFile> {
         if (path.string.length === 0) {
             return vault.getRoot();
         }
 
-        // 指定的路径存在，不需要创建
         const abstractFile = vault.getAbstractFileByPath(path.string);
         if (abstractFile !== null) {
             return abstractFile;
         }
 
-        // 递归，确保上级路径都存在
-        await PathUtil.create(path.parent, vault);
+        await PathUtil.createImpl(path.parent, vault, true);
 
-        // 指定的路径文件夹，创建文件夹
-        if (path.isFolder) {
-            let targetFolder = await vault.createFolder(path.string);
-            return targetFolder;
+        if (isFolder) {
+            return vault.createFolder(path.string);
         }
-
-        // 指定的路径是文件，
-        let targetFile = await vault.create(path.string, "");
-        return targetFile;
+        return vault.create(path.string, "");
     }
-
 }

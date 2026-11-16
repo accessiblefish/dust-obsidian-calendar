@@ -1,31 +1,38 @@
-import {useContext, useEffect, useRef, useState} from "react";
+import {useCallback, useContext, useEffect, useRef, useState} from "react";
 import {DateTime} from "luxon";
 import DayListOfMonthView from "../../entity/DayListOfMonthView";
 import MonthView from "./MonthView";
-import {useAppSelector} from "../redux/hooks";
+import {useAppDispatch, useAppSelector} from "../redux/hooks";
 import CalendarViewHeader from "./CalendarViewHeader";
 import YearView from "./YearView";
 import {selectCalendarViewType} from "../redux/calendarViewType";
 import {CalendarViewType, FontSizeChangeMode} from "../../base/enum"
-import {selectSelectedItem} from "../redux/selectedItemSlice";
+import {selectSelectedItem, updateSelectedDate} from "../redux/selectedItemSlice";
 import {PluginContext} from "../context";
 
-function useToday(): DateTime {
+function useToday() {
+    const dispatch = useAppDispatch();
     const [today, setToday] = useState(() => DateTime.now().startOf('day'));
+
+    const selectToday = useCallback(() => {
+        const nextToday = DateTime.now().startOf('day');
+        setToday(current => current.hasSame(nextToday, 'day') ? current : nextToday);
+        dispatch(updateSelectedDate(nextToday));
+        return nextToday;
+    }, [dispatch]);
 
     useEffect(() => {
         let timeout: number;
         const updateToday = () => {
-            const now = DateTime.now();
-            const nextToday = now.startOf('day');
-            setToday(current => current.hasSame(nextToday, 'day') ? current : nextToday);
-            timeout = window.setTimeout(updateToday, nextToday.plus({days: 1}).diff(now).as('milliseconds') + 100);
+            const nextToday = selectToday();
+            const delay = nextToday.plus({days: 1}).diff(DateTime.now()).as('milliseconds') + 100;
+            timeout = window.setTimeout(updateToday, delay);
         };
         updateToday();
         return () => window.clearTimeout(timeout);
-    }, []);
+    }, [selectToday]);
 
-    return today;
+    return {today, selectToday};
 }
 
 export default function CalendarViewImpl() {
@@ -33,7 +40,7 @@ export default function CalendarViewImpl() {
     const selectedDate = selectedItem.date;
     const calendarViewType = useAppSelector(selectCalendarViewType);
     const plugin = useContext(PluginContext)!;
-    const today = useToday();
+    const {today, selectToday} = useToday();
 
     const widthRef = useRef(null);
     const [width, setWidth] = useState(168);
@@ -87,13 +94,13 @@ export default function CalendarViewImpl() {
     if (calendarViewType === CalendarViewType.MONTH) {
         const dayListOfMonthView: DayListOfMonthView = new DayListOfMonthView(selectedDate.year, selectedDate.month);
         return <div style={style as React.CSSProperties} ref={widthRef}>
-            <CalendarViewHeader today={today}/>
+            <CalendarViewHeader today={today} onSelectToday={selectToday}/>
             <MonthView dayListOfMonthView={dayListOfMonthView} today={today}/>
         </div>
     }
     else {
         return <div style={style as React.CSSProperties} ref={widthRef}>
-            <CalendarViewHeader today={today}/>
+            <CalendarViewHeader today={today} onSelectToday={selectToday}/>
             <YearView showYear={selectedDate.year}/>
         </div>
     }

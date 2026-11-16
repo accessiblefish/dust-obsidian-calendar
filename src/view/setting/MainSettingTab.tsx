@@ -20,7 +20,7 @@ interface SettingDefinition {
     heading?: string;
     items?: SettingDefinition[];
     visible?: () => boolean;
-    render?: (setting: Setting) => void | (() => void);
+    render?: (setting: Setting) => void;
 }
 
 export default class MainSettingTab extends PluginSettingTab {
@@ -90,24 +90,10 @@ export default class MainSettingTab extends PluginSettingTab {
 
     display(): void {
         this.unmountReactRoots();
-        const {containerEl} = this;
-        containerEl.empty();
-        this.displayShouldDisplayLunarInfoToggle();
-        this.displayShouldDisplayHolidayInfo();
-        this.displayFontSizeChangeModeSelect();
-        this.displayImmutableFontSizeSlider();
-        this.displayQuarterNameModeSelect();
-        this.displayWordsPerDotInput();
-        this.displayDotUpperLimitSelect();
-        this.displayTodoAnnotationModeSelect();
-        this.displayShouldConfirmBeforeCreatingNoteToggle();
-        this.displayTemplatePluginSelect();
-
-        this.displayNoteSetting(NoteType.DAILY, "每日笔记");
-        this.displayNoteSetting(NoteType.WEEKLY, "每周笔记");
-        this.displayNoteSetting(NoteType.MONTHLY, "每月笔记");
-        this.displayNoteSetting(NoteType.QUARTERLY, "季度笔记");
-        this.displayNoteSetting(NoteType.YEARLY, "年度笔记");
+        this.containerEl.empty();
+        for (const definition of this.getSettingDefinitions()) {
+            this.renderDefinition(definition, this.containerEl);
+        }
     }
 
     async hide(): Promise<void> {
@@ -118,13 +104,7 @@ export default class MainSettingTab extends PluginSettingTab {
     }
 
     public refresh(): void {
-        const tab = this as unknown as { update?: () => void };
-        if (typeof tab.update === 'function') {
-            tab.update();
-        }
-        else {
-            this.display();
-        }
+        this.display();
     }
 
     private getNoteSettingDefinitions(noteType: NoteType, title: string): SettingDefinition {
@@ -134,10 +114,7 @@ export default class MainSettingTab extends PluginSettingTab {
             items: [
                 {
                     name: "启用",
-                    render: setting => {
-                        setting.setName("启用");
-                        this.addNoteOptionToggle(setting, noteType);
-                    },
+                    render: setting => this.addNoteOptionToggle(setting, noteType),
                 },
                 {
                     name: "文件命名规则",
@@ -155,15 +132,41 @@ export default class MainSettingTab extends PluginSettingTab {
         };
     }
 
-    private renderReact(setting: Setting, content: ReactNode): () => void {
+    private renderDefinition(definition: SettingDefinition, container: HTMLElement): void {
+        if (definition.visible && !definition.visible()) {
+            return;
+        }
+
+        if (definition.type === "group") {
+            const heading = new Setting(container).setName(definition.heading ?? "").setHeading();
+            const [toggle, ...items] = definition.items ?? [];
+            if (toggle) {
+                toggle.render?.(heading);
+            }
+            for (const item of items) {
+                this.renderDefinition(item, container);
+            }
+            return;
+        }
+
+        this.renderSetting(definition, new Setting(container));
+    }
+
+    private renderSetting(definition: SettingDefinition, setting: Setting): void {
+        if (definition.name) {
+            setting.setName(definition.name);
+        }
+        if (definition.desc) {
+            setting.setDesc(definition.desc);
+        }
+        definition.render?.(setting);
+    }
+
+    private renderReact(setting: Setting, content: ReactNode): void {
         setting.settingEl.empty();
         const root = createRoot(setting.settingEl);
         this.reactRoots.add(root);
         root.render(content);
-        return () => {
-            root.unmount();
-            this.reactRoots.delete(root);
-        };
     }
 
     private unmountReactRoots(): void {
@@ -173,11 +176,7 @@ export default class MainSettingTab extends PluginSettingTab {
         this.reactRoots.clear();
     }
 
-    private displayFontSizeChangeModeSelect(): void {
-        this.renderReact(new Setting(this.containerEl), <FontSizeChangeModeSelect plugin={this.plugin}/>);
-    }
-
-    private displayShouldDisplayLunarInfoToggle(setting: Setting = new Setting(this.containerEl)): void {
+    private displayShouldDisplayLunarInfoToggle(setting: Setting): void {
         setting.setName("是否显示农历信息").setDesc("关闭后不再显示农历月份、日期、节气、节日。");
         setting.addToggle(toggle => {
             toggle.setValue(this.plugin.calendarViewController.getShouldDisplayLunarInfo());
@@ -189,7 +188,7 @@ export default class MainSettingTab extends PluginSettingTab {
         });
     }
 
-    private displayShouldDisplayHolidayInfo(setting: Setting = new Setting(this.containerEl)): void {
+    private displayShouldDisplayHolidayInfo(setting: Setting): void {
         setting.setName("是否显示调休信息").setDesc("关闭后不再显示调休信息。");
         setting.addToggle(toggle => {
             toggle.setValue(this.plugin.calendarViewController.getShouldDisplayHolidayInfo());
@@ -201,30 +200,7 @@ export default class MainSettingTab extends PluginSettingTab {
         });
     }
 
-    private displayImmutableFontSizeSlider(): void {
-        if (this.plugin.database.setting.fontSizeChangeMode !== FontSizeChangeMode.IMMUTABLE) {
-            return;
-        }
-        this.renderReact(new Setting(this.containerEl), <ImmutableFontSizeSlider plugin={this.plugin}/>);
-    }
-
-    private displayQuarterNameModeSelect(): void {
-        this.renderReact(new Setting(this.containerEl), <QuarterNameModeSelect plugin={this.plugin}/>);
-    }
-
-    private displayWordsPerDotInput(): void {
-        this.renderReact(new Setting(this.containerEl), <WordsPerDotInput plugin={this.plugin}/>);
-    }
-
-    private displayDotUpperLimitSelect(): void {
-        this.renderReact(new Setting(this.containerEl), <DotUpperLimitSelect plugin={this.plugin}/>);
-    }
-
-    private displayTodoAnnotationModeSelect(): void {
-        this.renderReact(new Setting(this.containerEl), <TodoAnnotationModeSelect plugin={this.plugin}/>);
-    }
-
-    private displayShouldConfirmBeforeCreatingNoteToggle(setting: Setting = new Setting(this.containerEl)): void {
+    private displayShouldConfirmBeforeCreatingNoteToggle(setting: Setting): void {
         setting.setName("创建新笔记之前是否需要确认").setDesc("关闭后不再弹窗提示创建新笔记的信息。");
         setting.addToggle(toggle => {
             toggle.setValue(this.plugin.noteController.getShouldConfirmBeforeCreatingNote());
@@ -233,32 +209,6 @@ export default class MainSettingTab extends PluginSettingTab {
                 void this.plugin.database.saveSetting();
             });
         });
-    }
-
-    private displayTemplatePluginSelect(): void {
-        this.renderReact(new Setting(this.containerEl), <TemplatePluginSelect plugin={this.plugin}/>);
-    }
-
-    private displayNoteSetting(noteType: NoteType, title: string): void {
-        const {containerEl} = this;
-        const noteOption = this.plugin.noteController.getNoteOption(noteType);
-
-        const noteOptionElement = new Setting(containerEl);
-        noteOptionElement.setName(title).setHeading();
-        this.addNoteOptionToggle(noteOptionElement, noteType);
-
-        if (!noteOption) {
-            return;
-        }
-
-        this.renderReact(new Setting(containerEl), <NotePattern plugin={this.plugin} noteType={noteType}/>);
-
-        if (this.plugin.templateController.getTemplatePlugin() === TemplatePlugin.NONE
-            || !this.plugin.templateController.isTemplatePluginEnable()) {
-            return;
-        }
-
-        this.renderReact(new Setting(containerEl), <NoteTemplate plugin={this.plugin} noteType={noteType}/>);
     }
 
     private addNoteOptionToggle(setting: Setting, noteType: NoteType): void {

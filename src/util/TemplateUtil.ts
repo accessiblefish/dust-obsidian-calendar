@@ -28,12 +28,7 @@ export default class TemplateUtil {
         return new Path("");
     }
 
-    /**
-     * 向指定的文件中插入模板
-     * @param templateFile
-     */
-    public insertTemplateImpl(templateFile: TAbstractFile) {
-
+    public insertTemplateImpl(_templateFile: TAbstractFile): void {
     }
 
 }
