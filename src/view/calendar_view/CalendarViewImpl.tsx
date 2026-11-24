@@ -22,14 +22,26 @@ function useToday() {
     }, [dispatch]);
 
     useEffect(() => {
+        const viewDocument = activeDocument;
         let timeout: number;
         const updateToday = () => {
             const nextToday = selectToday();
             const delay = nextToday.plus({days: 1}).diff(DateTime.now()).as('milliseconds') + 100;
             timeout = window.setTimeout(updateToday, delay);
         };
+        const refreshToday = () => {
+            if (viewDocument.visibilityState === 'visible') {
+                selectToday();
+            }
+        };
         updateToday();
-        return () => window.clearTimeout(timeout);
+        viewDocument.addEventListener('visibilitychange', refreshToday);
+        window.addEventListener('focus', refreshToday);
+        return () => {
+            window.clearTimeout(timeout);
+            viewDocument.removeEventListener('visibilitychange', refreshToday);
+            window.removeEventListener('focus', refreshToday);
+        };
     }, [selectToday]);
 
     return {today, selectToday};
